@@ -1,0 +1,85 @@
+{
+  "home": {
+    "headline": "Samuel Mbugua",
+    "aboutParagraphs": [
+      "Samuel Mbugua is a masters student in the Bowers college of Computing and Information Science at Cornell University. He also holds a Bachelor of Science in Civil Engineering from Cornell.",
+      "His interest is in the intersection of tech and the built world."
+    ],
+    "interests": [
+      "Data Engineering",
+      "Data Science",
+      "Structural Analysis",
+      "Reinforced Concrete",
+      "Transportation Systems Engineering",
+      "Engineering Economics"
+    ],
+    "education": [
+      {
+        "school": "Cornell University",
+        "year": "'21",
+        "degrees": [
+          "Master of Professional Studies in Applied Statistics - Data Science",
+          "Bachelor of Science in Civil Engineering"
+        ]
+      }
+    ],
+    "experience": [
+      {
+        "title": "Professional Experience",
+        "items": [
+          "Facebook Inc | Virtual | Data Engineering Intern",
+          "Facebook University | Menlo Park, CA | Data Analytics Intern",
+          "Equity Bank Kenya LTD | Nairobi | Trade Finance Intern"
+        ]
+      },
+      {
+        "title": "Teaching Assistance",
+        "items": [
+          "CEE 4750 - Concrete Materials and Construction | Cornell",
+          "PHYS 2213 - Physics II: Electromagnetism | Cornell"
+        ]
+      },
+      {
+        "title": "Grading Assistance",
+        "items": [
+          "ENGRD 3200 - Engineering Computation | Cornell"
+        ]
+      },
+      {
+        "title": "Project Team",
+        "items": [
+          "Hyperloop Pod Levitation | Cornell Hyperloop"
+        ]
+      }
+    ],
+    "updates": [
+      {
+        "date": "2021.1",
+        "text": "Joined the Cornell Student Assembly as a voting member of the Student Assembly Infrastructure Fund Commission."
+      },
+      {
+        "date": "2020.11",
+        "text": "Led a committee of 9 as Co-lead to organise the Cornell Africa Development Conference (CADC) 2020."
+      },
+      {
+        "date": "2018.8",
+        "text": "Recieved 1st place together with four orther students at the Digital Transformation Hackathon held by the Cornell SC Johnson College of Business. Proposal was imed at objective diagnosis of pain using EEG headsets in response to the opioid crisis."
+      },
+      {
+        "date": "2018.8",
+        "text": "Came in 2nd at the IBM Call for Code Hackathon held by the Cornell College of Engineering. Led a team of 4 in designing a mobile application aimed at reducing confusion during rescue operations after natural disasters occur especially in the developing regions of the world."
+      }
+    ]
+  },
+  "about": {
+    "words": [
+      "Data Engineering",
+      "Civil Infrastructure",
+      "Design",
+      "Data Infrastructure"
+    ],
+    "introParagraphs": [
+      "Hello! My name is Samuel... I am an engineer who finds their place at the intersection of the physical and digital worlds. I am mainly interested in the design and building process of both civil and data infrastructure."
+    ]
+  }
+}

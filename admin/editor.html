@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site Editor | Samuel Mbugua</title>
+  <style>
+    :root {
+      --ink: #141414;
+      --ink-soft: #555;
+      --line: #d6d6d6;
+      --wash: #f6f6f6;
+      --ok: #1d6b33;
+      --err: #a3271b;
+      --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #fff;
+      font: 15px/1.5 var(--sans);
+    }
+
+    button, input, textarea { font: inherit; color: inherit; }
+
+    /* Top bar */
+    .bar {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem clamp(1rem, 3vw, 2rem);
+      background: #fff;
+      border-bottom: 4px double var(--ink);
+    }
+
+    .bar h1 {
+      margin: 0;
+      font: 900 1.5rem/1 var(--serif);
+    }
+
+    .bar__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .status { font-size: 0.9rem; color: var(--ink-soft); }
+    .status--ok { color: var(--ok); }
+    .status--err { color: var(--err); }
+    .status a { color: inherit; font-weight: 600; }
+
+    button {
+      cursor: pointer;
+      padding: 0.45rem 0.9rem;
+      border: 1px solid var(--ink);
+      border-radius: 3px;
+      background: #fff;
+    }
+
+    button:hover:not(:disabled) { background: var(--wash); }
+    button:disabled { cursor: not-allowed; opacity: 0.4; }
+
+    button.primary {
+      background: var(--ink);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button.primary:hover:not(:disabled) { background: #333; }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 1.5rem clamp(1rem, 3vw, 2rem) 4rem;
+    }
+
+    /* Connection panel */
+    .connect {
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem;
+      border: 1px solid var(--ink);
+    }
+
+    .connect summary {
+      cursor: pointer;
+      font: 700 1.05rem var(--serif);
+    }
+
+    .connect__grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 0.75rem 1rem;
+      margin: 1rem 0 0.75rem;
+    }
+
+    .connect__grid .wide { grid-column: 1 / -1; }
+
+    .connect__row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .help { margin-top: 1rem; font-size: 0.9rem; color: var(--ink-soft); }
+    .help ol { margin: 0.4rem 0 0; padding-left: 1.25rem; }
+
+    /* Fields */
+    .field { display: block; }
+
+    .field > span {
+      display: block;
+      margin-bottom: 0.2rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+    }
+
+    input[type="text"], input[type="password"], textarea {
+      width: 100%;
+      padding: 0.5rem 0.6rem;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: #fff;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: var(--ink);
+      box-shadow: 0 0 0 1px var(--ink);
+    }
+
+    textarea {
+      min-height: 4.5rem;
+      resize: vertical;
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.5;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .tabs button {
+      margin-bottom: -1px;
+      border-radius: 3px 3px 0 0;
+      border-color: transparent;
+      font: 700 1rem var(--serif);
+    }
+
+    .tabs button[aria-selected="true"] {
+      border-color: var(--ink) var(--ink) #fff;
+      background: #fff;
+    }
+
+    /* Cards */
+    .card {
+      margin-bottom: 1.5rem;
+      padding: 1rem 1.25rem 1.25rem;
+      border-top: 3px solid var(--ink);
+      background: var(--wash);
+    }
+
+    .card h2 {
+      margin: 0;
+      font: 700 1.2rem var(--serif);
+    }
+
+    .hint {
+      margin: 0.15rem 0 0.9rem;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    /* Repeating lists */
+    .list { display: grid; gap: 0.5rem; }
+
+    .list__row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 0.5rem;
+      align-items: start;
+      padding: 0.6rem;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .list .list .list__row { padding: 0; border: 0; }
+
+    .list__body { display: grid; gap: 0.5rem; }
+
+    .list__body--split {
+      grid-template-columns: 9rem 1fr;
+    }
+
+    .list__tools { display: flex; gap: 0.25rem; }
+
+    .list__tools button {
+      width: 2rem;
+      padding: 0.3rem 0;
+      border-color: var(--line);
+      line-height: 1;
+    }
+
+    .add {
+      justify-self: start;
+      border-style: dashed;
+      font-size: 0.9rem;
+    }
+
+    /* Preview */
+    dialog {
+      width: min(1400px, 95vw);
+      height: 90vh;
+      padding: 0;
+      border: 1px solid var(--ink);
+    }
+
+    dialog::backdrop { background: rgba(0, 0, 0, 0.5); }
+
+    .preview__bar {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid var(--ink);
+    }
+
+    .preview__bar strong { margin-right: auto; font-family: var(--serif); }
+
+    dialog iframe {
+      width: 100%;
+      height: calc(100% - 3rem);
+      border: 0;
+    }
+
+    @media (max-width: 640px) {
+      .connect__grid, .list__body--split { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="bar">
+    <h1>Site Editor</h1>
+    <div class="bar__actions">
+      <span id="status" class="status" role="status" aria-live="polite"></span>
+      <button id="preview-btn" type="button" disabled>Preview</button>
+      <button id="save-btn" type="button" class="primary" disabled>Save &amp; publish</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <details id="connect" class="connect" open>
+      <summary id="connect-summary">GitHub connection</summary>
+      <div class="connect__grid">
+        <label class="field"><span>Repository (owner/name)</span>
+          <input id="repo" type="text" value="Sam-mbugua/sam-mbugua.github.io" spellcheck="false">
+        </label>
+        <label class="field"><span>Branch</span>
+          <input id="branch" type="text" value="master" spellcheck="false">
+        </label>
+        <label class="field wide"><span>Access token</span>
+          <input id="token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+      <div class="connect__row">
+        <button id="load-btn" type="button" class="primary">Load content</button>
+        <label><input id="remember" type="checkbox"> Remember token on this computer</label>
+      </div>
+      <div class="help">
+        <strong>Need a token?</strong> It lets this page save to your repository. Create one once:
+        <ol>
+          <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Settings → Fine-grained tokens → Generate new token</a>.</li>
+          <li>Repository access: <em>Only select repositories</em> → <code>sam-mbugua.github.io</code>.</li>
+          <li>Permissions: <em>Contents</em> → Read and write. Optionally <em>Pages</em> → Read, so this page can tell you when the site is live.</li>
+          <li>Generate, then paste the token above. Treat it like a password.</li>
+        </ol>
+      </div>
+    </details>
+
+    <nav id="tabs" class="tabs" hidden>
+      <button type="button" data-tab="home" aria-selected="true">Home page</button>
+      <button type="button" data-tab="about" aria-selected="false">About page</button>
+    </nav>
+
+    <main id="editor"></main>
+  </div>
+
+  <dialog id="preview">
+    <div class="preview__bar">
+      <strong>Preview (not published yet)</strong>
+      <button type="button" data-preview="home">Home</button>
+      <button type="button" data-preview="about">About</button>
+      <button type="button" id="preview-close">Close</button>
+    </div>
+    <iframe id="preview-frame" title="Page preview"></iframe>
+  </dialog>
+
+  <script src="render.js"></script>
+  <script>
+    "use strict";
+
+    const $ = (sel) => document.querySelector(sel);
+    const STORE = "site-editor:";
+    const CONTENT_PATH = "content/site.json";
+    const PAGE_PATHS = { home: SiteRender.PAGES.home, about: SiteRender.PAGES.about };
+
+    let content = null;  // what is being edited
+    let base = null;     // { sha, files } — the commit the edits are based on
+    let dirty = false;
+    let busy = false;
+    let tab = "home";
+    let pendingFocus = null;
+    let publishRun = 0;
+
+    /* ---------- small DOM helper ---------- */
+
+    function el(tag, props = {}, ...children) {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(props)) {
+        if (value == null) continue;
+        if (key === "class") node.className = value;
+        else if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+        else if (key in node) node[key] = value;
+        else node.setAttribute(key, value);
+      }
+      node.append(...children.flat().filter((c) => c != null && c !== false));
+      return node;
+    }
+
+    function autosize(textarea) {
+      textarea.style.height = "auto";
+      textarea.style.height = textarea.scrollHeight + 2 + "px";
+    }
+
+    /* ---------- status + state ---------- */
+
+    function setStatus(message, kind = "") {
+      const status = $("#status");
+      status.className = "status" + (kind ? ` status--${kind}` : "");
+      status.replaceChildren(...[].concat(message));
+    }
+
+    function updateButtons() {
+      $("#save-btn").disabled = !content || !dirty || busy;
+      $("#preview-btn").disabled = !content;
+      $("#load-btn").disabled = busy;
+    }
+
+    function markDirty() {
+      if (!dirty) setStatus("Unsaved changes");
+      dirty = true;
+      updateButtons();
+    }
+
+    function changed() {
+      markDirty();
+      render();
+    }
+
+    /* ---------- editors ---------- */
+
+    function card(title, hint, ...body) {
+      return el("section", { class: "card" }, el("h2", {}, title), hint && el("p", { class: "hint" }, hint), ...body);
+    }
+
+    function textInput(obj, key, { label, placeholder, multiline = false } = {}) {
+      const input = el(multiline ? "textarea" : "input", {
+        type: multiline ? null : "text",
+        value: obj[key] == null ? "" : obj[key],
+        placeholder,
+        "aria-label": label || placeholder,
+        oninput: (e) => {
+          obj[key] = e.target.value;
+          if (multiline) autosize(e.target);
+          markDirty();
+        },
+      });
+      return label ? el("label", { class: "field" }, el("span", {}, label), input) : input;
+    }
+
+    /* A list whose items can be added, removed and reordered. */
+    function listEditor(list, id, renderItem, { addLabel, newItem, addToTop = false, minItems = 0, split = false }) {
+      const move = (i, dir) => {
+        [list[i], list[i + dir]] = [list[i + dir], list[i]];
+        changed();
+      };
+      const hasText = (v) => (typeof v === "string" ? v.trim() !== "" : Object.values(v || {}).some(hasText));
+      const remove = (i) => {
+        if (hasText(list[i]) && !confirm("Remove this item?")) return;
+        list.splice(i, 1);
+        changed();
+      };
+      const tool = (label, title, disabled, onclick) =>
+        el("button", { type: "button", title, "aria-label": title, disabled, onclick }, label);
+
+      return el("div", { class: "list", "data-list": id },
+        list.map((item, i) => el("div", { class: "list__row" },
+          el("div", { class: "list__body" + (split ? " list__body--split" : "") }, renderItem(item, i)),
+          el("div", { class: "list__tools" },
+            tool("↑", "Move up", i === 0, () => move(i, -1)),
+            tool("↓", "Move down", i === list.length - 1, () => move(i, 1)),
+            tool("✕", "Remove", list.length <= minItems, () => remove(i))
+          )
+        )),
+        el("button", {
+          type: "button",
+          class: "add",
+          onclick: () => {
+            if (addToTop) list.unshift(newItem());
+            else list.push(newItem());
+            pendingFocus = { id, index: addToTop ? 0 : list.length - 1 };
+            changed();
+          },
+        }, "+ " + addLabel)
+      );
+    }
+
+    function stringList(list, id, { addLabel, placeholder, multiline = false, minItems = 0 }) {
+      return listEditor(list, id, (_, i) => textInput(list, i, { placeholder, multiline }), {
+        addLabel, newItem: () => "", minItems,
+      });
+    }
+
+    function homeEditor(home) {
+      return [
+        card("Headline", "The large title above your photo.",
+          textInput(home, "headline", { placeholder: "Your name" })),
+
+        card("About Me", "Paragraphs under your photo.",
+          stringList(home.aboutParagraphs, "about", { addLabel: "Add paragraph", placeholder: "Paragraph", multiline: true })),
+
+        card("Area of Interest", "Shown in one line, separated by “|”.",
+          stringList(home.interests, "interests", { addLabel: "Add interest", placeholder: "e.g. Data Engineering" })),
+
+        card("Updates", "The left column. Put the newest at the top; “Add update” adds one there.",
+          listEditor(home.updates, "updates", (u) => [
+            textInput(u, "date", { label: "Date", placeholder: "e.g. 2024.6" }),
+            textInput(u, "text", { label: "Update", placeholder: "What happened?", multiline: true }),
+          ], { addLabel: "Add update", newItem: () => ({ date: "", text: "" }), addToTop: true, split: true })),
+
+        card("Education", "Top of the Experience column.",
+          listEditor(home.education, "education", (edu, i) => [
+            el("div", { class: "list__body list__body--split" },
+              textInput(edu, "year", { label: "Year", placeholder: "e.g. '21" }),
+              textInput(edu, "school", { label: "School", placeholder: "e.g. Cornell University" })),
+            el("div", { class: "field" }, el("span", {}, "Degrees"),
+              stringList(edu.degrees, `education-${i}`, { addLabel: "Add degree", placeholder: "Degree" })),
+          ], { addLabel: "Add school", newItem: () => ({ school: "", year: "", degrees: [""] }) })),
+
+        card("Experience", "Sections below Education, e.g. Professional Experience or Teaching Assistance.",
+          listEditor(home.experience, "experience", (section, i) => [
+            textInput(section, "title", { label: "Section title", placeholder: "e.g. Professional Experience" }),
+            el("div", { class: "field" }, el("span", {}, "Entries"),
+              stringList(section.items, `experience-${i}`, {
+                addLabel: "Add entry", placeholder: "e.g. Company | City | Role",
+              })),
+          ], { addLabel: "Add section", newItem: () => ({ title: "", items: [""] }) })),
+      ];
+    }
+
+    function aboutEditor(about) {
+      return [
+        card("Flashing words", "Shown one after another in this order, about 3 seconds each.",
+          stringList(about.words, "words", { addLabel: "Add word", placeholder: "e.g. Data Engineering", minItems: 1 })),
+
+        card("Introduction", "The paragraph(s) under the flashing words.",
+          stringList(about.introParagraphs, "intro", { addLabel: "Add paragraph", placeholder: "Paragraph", multiline: true })),
+      ];
+    }
+
+    function render() {
+      const editor = $("#editor");
+      const scroll = window.scrollY;
+      editor.replaceChildren(...(tab === "home" ? homeEditor(content.home) : aboutEditor(content.about)));
+      editor.querySelectorAll("textarea").forEach(autosize);
+      window.scrollTo(0, scroll);
+
+      if (pendingFocus) {
+        const row = editor.querySelectorAll(`[data-list="${pendingFocus.id}"] > .list__row`)[pendingFocus.index];
+        const field = row && row.querySelector("input, textarea");
+        if (field) field.focus();
+        pendingFocus = null;
+      }
+    }
+
+    document.querySelectorAll("#tabs button").forEach((button) => {
+      button.addEventListener("click", () => {
+        tab = button.dataset.tab;
+        document.querySelectorAll("#tabs button").forEach((b) => b.setAttribute("aria-selected", b === button));
+        render();
+      });
+    });
+
+    /* ---------- GitHub ---------- */
+
+    function connection() {
+      const [owner, repo] = $("#repo").value.trim().split("/");
+      return { owner, repo, branch: $("#branch").value.trim(), token: $("#token").value.trim() };
+    }
+
+    async function gh(c, path, { method = "GET", body, raw = false } = {}) {
+      const headers = { Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json" };
+      if (c.token) headers.Authorization = `Bearer ${c.token}`;
+      if (body) headers["Content-Type"] = "application/json";
+      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`, {
+        method, headers, cache: "no-store", body: body ? JSON.stringify(body) : undefined,
+      });
+      if (!res.ok) {
+        let message = res.statusText;
+        try { message = (await res.json()).message || message; } catch (_) { /* not JSON */ }
+        const error = new Error(message);
+        error.status = res.status;
+        throw error;
+      }
+      return raw ? res.text() : res.json();
+    }
+
+    async function fetchBase(c) {
+      const ref = await gh(c, `/git/ref/heads/${encodeURIComponent(c.branch)}`);
+      const sha = ref.object.sha;
+      const paths = [CONTENT_PATH, ...Object.values(PAGE_PATHS)];
+      const texts = await Promise.all(paths.map((p) =>
+        gh(c, `/contents/${p}?ref=${sha}`, { raw: true }).catch((e) => {
+          if (e.status !== 404) throw e;
+          throw new Error(`${p} was not found on branch “${c.branch}”. Push the latest site files first.`);
+        })
+      ));
+      return { sha, files: Object.fromEntries(paths.map((p, i) => [p, texts[i]])) };
+    }
+
+    function friendly(error) {
+      if (error.status === 401) return "GitHub rejected the token. Check it hasn't expired.";
+      if (error.status === 403) return `GitHub refused: ${error.message}. Does the token have Contents read & write on this repo?`;
+      if (error.status === 404) return "Repository or branch not found (a private repo also needs a token).";
+      if (error instanceof TypeError) return "Couldn't reach GitHub. Check your internet connection.";
+      return error.message;
+    }
+
+    function rememberSettings() {
+      localStorage.setItem(STORE + "repo", $("#repo").value.trim());
+      localStorage.setItem(STORE + "branch", $("#branch").value.trim());
+      if ($("#remember").checked && $("#token").value.trim()) localStorage.setItem(STORE + "token", $("#token").value.trim());
+      else localStorage.removeItem(STORE + "token");
+    }
+
+    async function load() {
+      if (dirty && !confirm("Discard your unsaved changes and reload from GitHub?")) return;
+      const c = connection();
+      if (!c.owner || !c.repo || !c.branch) return setStatus("Fill in the repository and branch.", "err");
+
+      busy = true;
+      updateButtons();
+      setStatus("Loading…");
+      try {
+        base = await fetchBase(c);
+        content = JSON.parse(base.files[CONTENT_PATH]);
+        dirty = false;
+        rememberSettings();
+        $("#tabs").hidden = false;
+        $("#connect").open = false;
+        $("#connect-summary").textContent = `Connected to ${c.owner}/${c.repo} (${c.branch}). Click to change.`;
+        render();
+        setStatus("Loaded the latest content.", "ok");
+      } catch (error) {
+        setStatus(friendly(error), "err");
+      } finally {
+        busy = false;
+        updateButtons();
+      }
+    }
+
+    async function commitFiles(c, files) {
+      const parent = await gh(c, `/git/commits/${base.sha}`);
+      const tree = await gh(c, "/git/trees", {
+        method: "POST",
+        body: {
+          base_tree: parent.tree.sha,
+          tree: files.map(([path, text]) => ({ path, mode: "100644", type: "blob", content: text })),
+        },
+      });
+      const commit = await gh(c, "/git/commits", {
+        method: "POST",
+        body: { message: "Update site content via editor", tree: tree.sha, parents: [base.sha] },
+      });
+      await gh(c, `/git/refs/heads/${encodeURIComponent(c.branch)}`, {
+        method: "PATCH",
+        body: { sha: commit.sha, force: false },
+      });
+      return commit.sha;
+    }
+
+    function siteUrl(c) {
+      const host = `https://${c.owner.toLowerCase()}.github.io/`;
+      return c.repo.toLowerCase() === `${c.owner.toLowerCase()}.github.io` ? host : `${host}${c.repo}/`;
+    }
+
+    async function waitUntilLive(c, sha) {
+      const deadline = Date.now() + 5 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 5000));
+        let build;
+        try { build = await gh(c, "/pages/builds/latest"); } catch (_) { return "unknown"; }
+        if (build.commit === sha && build.status === "built") return "live";
+        if (build.commit === sha && build.status === "errored") return "error";
+      }
+      return "unknown";
+    }
+
+    async function save() {
+      if (!content || busy) return;
+      const errors = SiteRender.validate(content);
+      if (errors.length) return setStatus(errors.join(" "), "err");
+
+      const c = connection();
+      if (!c.token) {
+        $("#connect").open = true;
+        $("#token").focus();
+        return setStatus("Paste your access token to publish.", "err");
+      }
+
+      busy = true;
+      updateButtons();
+      try {
+        let sha;
+        for (let attempt = 0; ; attempt++) {
+          const files = {
+            [CONTENT_PATH]: JSON.stringify(content, null, 2) + "\n",
+            ...SiteRender.buildPages(content, base.files),
+          };
+          const changedFiles = Object.entries(files).filter(([path, text]) => text !== base.files[path]);
+          if (!changedFiles.length) {
+            dirty = false;
+            setStatus("Nothing to publish; the site already matches.", "ok");
+            return;
+          }
+
+          setStatus("Publishing…");
+          try {
+            sha = await commitFiles(c, changedFiles);
+            base = { sha, files: { ...base.files, ...files } };
+            break;
+          } catch (error) {
+            const conflict = error.status === 422 && /fast.forward/i.test(error.message);
+            if (!conflict || attempt > 0) throw error;
+            const ok = confirm("The site was changed on GitHub since you loaded it. Publish your edits on top of the latest version?");
+            if (!ok) throw new Error("Not published. Click “Load content” to get the latest version.");
+            base = await fetchBase(c);
+          }
+        }
+
+        dirty = false;
+        rememberSettings();
+        const url = siteUrl(c);
+        const run = ++publishRun;
+        setStatus("Published. GitHub is rebuilding the site (usually under a minute)…", "ok");
+        busy = false;
+        updateButtons();
+
+        const result = await waitUntilLive(c, sha);
+        if (dirty || run !== publishRun) return;
+        if (result === "live") {
+          setStatus(["Live ✓ ", el("a", { href: url, target: "_blank", rel: "noopener" }, "View site"),
+            " (hard-refresh with ⌘⇧R if you still see the old version)"], "ok");
+        } else if (result === "error") {
+          setStatus("Saved to GitHub, but the Pages build failed. Check the repo's Actions tab.", "err");
+        } else {
+          setStatus(["Published ✓ The site updates within a minute or two. ",
+            el("a", { href: url, target: "_blank", rel: "noopener" }, "View site")], "ok");
+        }
+      } catch (error) {
+        setStatus(friendly(error), "err");
+      } finally {
+        busy = false;
+        updateButtons();
+      }
+    }
+
+    /* ---------- preview ---------- */
+
+    /* Styles and images come from the local copy of the site this editor sits in (admin/..) */
+    function showPreview(page) {
+      const path = PAGE_PATHS[page];
+      const html = SiteRender.buildPages(content, base.files)[path];
+      const baseHref = new URL("../" + path.replace(/index\.html$/, ""), location.href).href;
+      $("#preview-frame").srcdoc = html.replace("<head>", `<head>\n<base href="${baseHref}">`);
+      document.querySelectorAll("[data-preview]").forEach((b) => b.classList.toggle("primary", b.dataset.preview === page));
+    }
+
+    $("#preview-btn").addEventListener("click", () => {
+      const errors = SiteRender.validate(content);
+      if (errors.length) return setStatus(errors.join(" "), "err");
+      showPreview(tab);
+      $("#preview").showModal();
+    });
+    document.querySelectorAll("[data-preview]").forEach((b) => b.addEventListener("click", () => showPreview(b.dataset.preview)));
+    $("#preview-close").addEventListener("click", () => $("#preview").close());
+
+    /* ---------- wiring ---------- */
+
+    $("#load-btn").addEventListener("click", load);
+    $("#save-btn").addEventListener("click", save);
+
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (dirty) save();
+      }
+    });
+
+    window.addEventListener("beforeunload", (e) => {
+      if (dirty) e.preventDefault();
+    });
+
+    for (const key of ["repo", "branch", "token"]) {
+      const saved = localStorage.getItem(STORE + key);
+      if (saved) $("#" + key).value = saved;
+    }
+    $("#remember").checked = Boolean(localStorage.getItem(STORE + "token"));
+    setStatus("Click “Load content” to start.");
+  </script>
+</body>
+</html>

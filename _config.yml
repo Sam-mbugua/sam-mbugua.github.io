@@ -1,0 +1,9 @@
+# GitHub Pages (Jekyll) settings.
+# These folders support the site but are not pages themselves:
+#   admin/   - local content editor (open admin/editor.html in a browser)
+#   content/ - the text the editor manages
+#   legacy/  - old coursework scripts
+exclude:
+  - admin
+  - content
+  - legacy
