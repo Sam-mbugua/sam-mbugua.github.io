@@ -2,7 +2,7 @@
   "home": {
     "headline": "Samuel Mbugua",
     "aboutParagraphs": [
-      "Samuel Mbugua is a masters student in the Bowers college of Computing and Information Science at Cornell University. He also holds a Bachelor of Science in Civil Engineering from Cornell.",
+      "Samuel Mbugua is a senior data engineer at McKinsey & Company. Previously a masters student in the Bowers college of Computing and Information Science at Cornell University. He also holds a Bachelor of Science in Civil Engineering from Cornell.",
       "His interest is in the intersection of tech and the built world."
     ],
     "interests": [
@@ -11,7 +11,8 @@
       "Structural Analysis",
       "Reinforced Concrete",
       "Transportation Systems Engineering",
-      "Engineering Economics"
+      "Engineering Economics",
+      "Policy"
     ],
     "education": [
       {
@@ -29,7 +30,8 @@
         "items": [
           "Facebook Inc | Virtual | Data Engineering Intern",
           "Facebook University | Menlo Park, CA | Data Analytics Intern",
-          "Equity Bank Kenya LTD | Nairobi | Trade Finance Intern"
+          "Equity Bank Kenya LTD | Nairobi | Trade Finance Intern",
+          "McKinsey & Company | New York City | Senior Data Engineer"
         ]
       },
       {
@@ -68,14 +70,22 @@
       {
         "date": "2018.8",
         "text": "Came in 2nd at the IBM Call for Code Hackathon held by the Cornell College of Engineering. Led a team of 4 in designing a mobile application aimed at reducing confusion during rescue operations after natural disasters occur especially in the developing regions of the world."
+      },
+      {
+        "date": "2016.1",
+        "text": "Ranked top of district in the Kenya Certificate of Secondary Education (KCSE) national examinations. Selected for the Equity Leaders Program (ELP) in recognition of top district-level academic performance."
+      },
+      {
+        "date": "2014.3",
+        "text": "Elected President of the Kiambu County Student Council, representing secondary school students across the county's 12 sub-counties on student welfare, governance, and various initiatives.\n"
       }
     ]
   },
   "about": {
     "words": [
-      "Data Engineering",
-      "Civil Infrastructure",
       "Design",
+      "Data Engineering",
+      "Civil Engineering",
       "Data Infrastructure"
     ],
     "introParagraphs": [

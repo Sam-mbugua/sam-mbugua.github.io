@@ -84,36 +84,43 @@
       padding: 1.5rem clamp(1rem, 3vw, 2rem) 4rem;
     }
 
-    /* Connection panel */
-    .connect {
+    /* Folder + publish panels */
+    .panel {
       margin-bottom: 1.5rem;
       padding: 1rem 1.25rem;
       border: 1px solid var(--ink);
     }
 
-    .connect summary {
-      cursor: pointer;
-      font: 700 1.05rem var(--serif);
-    }
-
-    .connect__grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 0.75rem 1rem;
-      margin: 1rem 0 0.75rem;
-    }
-
-    .connect__grid .wide { grid-column: 1 / -1; }
-
-    .connect__row {
+    .panel__row {
       display: flex;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
       align-items: center;
     }
 
-    .help { margin-top: 1rem; font-size: 0.9rem; color: var(--ink-soft); }
-    .help ol { margin: 0.4rem 0 0; padding-left: 1.25rem; }
+    .panel__title {
+      margin-right: auto;
+      font: 700 1.05rem var(--serif);
+    }
+
+    .panel__title small {
+      display: block;
+      font: 400 0.9rem var(--sans);
+      color: var(--ink-soft);
+    }
+
+    .help { margin: 0.75rem 0 0; font-size: 0.9rem; color: var(--ink-soft); }
+
+    .publish { border-color: var(--ok); }
+
+    .publish pre {
+      flex: 1;
+      margin: 0;
+      padding: 0.5rem 0.75rem;
+      overflow-x: auto;
+      background: var(--wash);
+      font-size: 0.85rem;
+    }
 
     /* Fields */
     .field { display: block; }
@@ -251,7 +258,7 @@
     }
 
     @media (max-width: 640px) {
-      .connect__grid, .list__body--split { grid-template-columns: 1fr; }
+      .list__body--split { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -261,38 +268,34 @@
     <div class="bar__actions">
       <span id="status" class="status" role="status" aria-live="polite"></span>
       <button id="preview-btn" type="button" disabled>Preview</button>
-      <button id="save-btn" type="button" class="primary" disabled>Save &amp; publish</button>
+      <button id="save-btn" type="button" class="primary" disabled>Save</button>
     </div>
   </header>
 
   <div class="wrap">
-    <details id="connect" class="connect" open>
-      <summary id="connect-summary">GitHub connection</summary>
-      <div class="connect__grid">
-        <label class="field"><span>Repository (owner/name)</span>
-          <input id="repo" type="text" value="Sam-mbugua/sam-mbugua.github.io" spellcheck="false">
-        </label>
-        <label class="field"><span>Branch</span>
-          <input id="branch" type="text" value="master" spellcheck="false">
-        </label>
-        <label class="field wide"><span>Access token</span>
-          <input id="token" type="password" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
-        </label>
+    <section class="panel">
+      <div class="panel__row">
+        <div class="panel__title">Website folder
+          <small id="folder-name">Not opened yet</small>
+        </div>
+        <button id="open-btn" type="button" class="primary">Open website folder</button>
+        <button id="change-btn" type="button" hidden>Choose a different folder</button>
       </div>
-      <div class="connect__row">
-        <button id="load-btn" type="button" class="primary">Load content</button>
-        <label><input id="remember" type="checkbox"> Remember token on this computer</label>
+      <p id="folder-help" class="help">
+        Choose the <code>sam-mbugua.github.io</code> folder (the one that contains <code>index.html</code>).
+        Chrome will ask to let this page edit files there. Save writes the pages directly into that folder;
+        then commit and push to publish.
+      </p>
+    </section>
+
+    <section id="publish" class="panel publish" hidden>
+      <div class="panel__title">Saved. To publish, run this in the website folder:</div>
+      <div class="panel__row" style="margin-top: 0.6rem">
+        <pre id="publish-cmd"></pre>
+        <button id="copy-btn" type="button">Copy</button>
       </div>
-      <div class="help">
-        <strong>Need a token?</strong> It lets this page save to your repository. Create one once:
-        <ol>
-          <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Settings → Fine-grained tokens → Generate new token</a>.</li>
-          <li>Repository access: <em>Only select repositories</em> → <code>sam-mbugua.github.io</code>.</li>
-          <li>Permissions: <em>Contents</em> → Read and write. Optionally <em>Pages</em> → Read, so this page can tell you when the site is live.</li>
-          <li>Generate, then paste the token above. Treat it like a password.</li>
-        </ol>
-      </div>
-    </details>
+      <p class="help">The public site updates about a minute after the push.</p>
+    </section>
 
     <nav id="tabs" class="tabs" hidden>
       <button type="button" data-tab="home" aria-selected="true">Home page</button>
@@ -304,7 +307,7 @@
 
   <dialog id="preview">
     <div class="preview__bar">
-      <strong>Preview (not published yet)</strong>
+      <strong>Preview (not saved yet)</strong>
       <button type="button" data-preview="home">Home</button>
       <button type="button" data-preview="about">About</button>
       <button type="button" id="preview-close">Close</button>
@@ -317,17 +320,15 @@
     "use strict";
 
     const $ = (sel) => document.querySelector(sel);
-    const STORE = "site-editor:";
     const CONTENT_PATH = "content/site.json";
     const PAGE_PATHS = { home: SiteRender.PAGES.home, about: SiteRender.PAGES.about };
 
     let content = null;  // what is being edited
-    let base = null;     // { sha, files } — the commit the edits are based on
+    let base = null;     // { files } — the file contents the edits are based on
     let dirty = false;
     let busy = false;
     let tab = "home";
     let pendingFocus = null;
-    let publishRun = 0;
 
     /* ---------- small DOM helper ---------- */
 
@@ -360,11 +361,13 @@
     function updateButtons() {
       $("#save-btn").disabled = !content || !dirty || busy;
       $("#preview-btn").disabled = !content;
-      $("#load-btn").disabled = busy;
+      $("#open-btn").disabled = busy;
+      $("#change-btn").disabled = busy;
     }
 
     function markDirty() {
       if (!dirty) setStatus("Unsaved changes");
+      $("#publish").hidden = true;
       dirty = true;
       updateButtons();
     }
@@ -508,119 +511,96 @@
       });
     });
 
-    /* ---------- GitHub ---------- */
+    /* ---------- website folder (File System Access API) ---------- */
 
-    function connection() {
-      const [owner, repo] = $("#repo").value.trim().split("/");
-      return { owner, repo, branch: $("#branch").value.trim(), token: $("#token").value.trim() };
-    }
+    const PUBLISH_CMD = `git add ${[CONTENT_PATH, ...Object.values(PAGE_PATHS)].join(" ")}\n` +
+      `git commit -m "Update site content"\ngit push`;
 
-    async function gh(c, path, { method = "GET", body, raw = false } = {}) {
-      const headers = { Accept: raw ? "application/vnd.github.raw+json" : "application/vnd.github+json" };
-      if (c.token) headers.Authorization = `Bearer ${c.token}`;
-      if (body) headers["Content-Type"] = "application/json";
-      const res = await fetch(`https://api.github.com/repos/${c.owner}/${c.repo}${path}`, {
-        method, headers, cache: "no-store", body: body ? JSON.stringify(body) : undefined,
+    let folder = null;       // FileSystemDirectoryHandle of the website folder
+    let savedFolder = null;  // handle remembered from a previous visit
+
+    /* The folder handle is kept in IndexedDB so it doesn't have to be picked every time. */
+    function kv(mode, action) {
+      return new Promise((resolve, reject) => {
+        const open = indexedDB.open("site-editor", 1);
+        open.onupgradeneeded = () => open.result.createObjectStore("kv");
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const tx = open.result.transaction("kv", mode);
+          const request = action(tx.objectStore("kv"));
+          tx.oncomplete = () => resolve(request.result);
+          tx.onerror = () => reject(tx.error);
+        };
       });
-      if (!res.ok) {
-        let message = res.statusText;
-        try { message = (await res.json()).message || message; } catch (_) { /* not JSON */ }
-        const error = new Error(message);
-        error.status = res.status;
-        throw error;
-      }
-      return raw ? res.text() : res.json();
     }
 
-    async function fetchBase(c) {
-      const ref = await gh(c, `/git/ref/heads/${encodeURIComponent(c.branch)}`);
-      const sha = ref.object.sha;
+    async function fileHandle(path) {
+      const parts = path.split("/");
+      let dir = folder;
+      for (const part of parts.slice(0, -1)) dir = await dir.getDirectoryHandle(part);
+      return dir.getFileHandle(parts[parts.length - 1]);
+    }
+
+    async function readFiles() {
       const paths = [CONTENT_PATH, ...Object.values(PAGE_PATHS)];
-      const texts = await Promise.all(paths.map((p) =>
-        gh(c, `/contents/${p}?ref=${sha}`, { raw: true }).catch((e) => {
-          if (e.status !== 404) throw e;
-          throw new Error(`${p} was not found on branch “${c.branch}”. Push the latest site files first.`);
-        })
-      ));
-      return { sha, files: Object.fromEntries(paths.map((p, i) => [p, texts[i]])) };
+      const texts = await Promise.all(paths.map(async (p) => {
+        try {
+          return await (await (await fileHandle(p)).getFile()).text();
+        } catch (error) {
+          if (error.name !== "NotFoundError") throw error;
+          throw new Error(`“${folder.name}” doesn't look like the website folder (${p} is missing). ` +
+            "Choose the sam-mbugua.github.io folder.");
+        }
+      }));
+      return Object.fromEntries(paths.map((p, i) => [p, texts[i]]));
     }
 
-    function friendly(error) {
-      if (error.status === 401) return "GitHub rejected the token. Check it hasn't expired.";
-      if (error.status === 403) return `GitHub refused: ${error.message}. Does the token have Contents read & write on this repo?`;
-      if (error.status === 404) return "Repository or branch not found (a private repo also needs a token).";
-      if (error instanceof TypeError) return "Couldn't reach GitHub. Check your internet connection.";
-      return error.message;
+    async function writeFile(path, text) {
+      const writable = await (await fileHandle(path)).createWritable();
+      await writable.write(text);
+      await writable.close();
     }
 
-    function rememberSettings() {
-      localStorage.setItem(STORE + "repo", $("#repo").value.trim());
-      localStorage.setItem(STORE + "branch", $("#branch").value.trim());
-      if ($("#remember").checked && $("#token").value.trim()) localStorage.setItem(STORE + "token", $("#token").value.trim());
-      else localStorage.removeItem(STORE + "token");
+    async function ensurePermission(handle) {
+      const opts = { mode: "readwrite" };
+      if ((await handle.queryPermission(opts)) === "granted") return;
+      if ((await handle.requestPermission(opts)) !== "granted") {
+        throw new Error("Chrome needs permission to edit the website folder.");
+      }
     }
 
-    async function load() {
-      if (dirty && !confirm("Discard your unsaved changes and reload from GitHub?")) return;
-      const c = connection();
-      if (!c.owner || !c.repo || !c.branch) return setStatus("Fill in the repository and branch.", "err");
-
+    async function openFolder(pickNew) {
+      if (dirty && !confirm("Discard your unsaved changes and reload from the folder?")) return;
       busy = true;
       updateButtons();
-      setStatus("Loading…");
       try {
-        base = await fetchBase(c);
-        content = JSON.parse(base.files[CONTENT_PATH]);
+        let handle = !pickNew && (folder || savedFolder);
+        if (!handle) handle = await window.showDirectoryPicker({ id: "site-editor", mode: "readwrite" });
+        await ensurePermission(handle);
+
+        folder = handle;
+        setStatus("Loading…");
+        const files = await readFiles();
+        base = { files };
+        content = JSON.parse(files[CONTENT_PATH]);
         dirty = false;
-        rememberSettings();
+        kv("readwrite", (store) => store.put(handle, "folder")).catch(() => {});
+        savedFolder = handle;
+
+        $("#folder-name").textContent = `Editing “${folder.name}”`;
+        $("#folder-help").hidden = true;
+        $("#open-btn").textContent = "Reload from folder";
+        $("#change-btn").hidden = false;
+        $("#publish").hidden = true;
         $("#tabs").hidden = false;
-        $("#connect").open = false;
-        $("#connect-summary").textContent = `Connected to ${c.owner}/${c.repo} (${c.branch}). Click to change.`;
         render();
-        setStatus("Loaded the latest content.", "ok");
+        setStatus("Loaded.", "ok");
       } catch (error) {
-        setStatus(friendly(error), "err");
+        if (error.name !== "AbortError") setStatus(error.message, "err");
       } finally {
         busy = false;
         updateButtons();
       }
-    }
-
-    async function commitFiles(c, files) {
-      const parent = await gh(c, `/git/commits/${base.sha}`);
-      const tree = await gh(c, "/git/trees", {
-        method: "POST",
-        body: {
-          base_tree: parent.tree.sha,
-          tree: files.map(([path, text]) => ({ path, mode: "100644", type: "blob", content: text })),
-        },
-      });
-      const commit = await gh(c, "/git/commits", {
-        method: "POST",
-        body: { message: "Update site content via editor", tree: tree.sha, parents: [base.sha] },
-      });
-      await gh(c, `/git/refs/heads/${encodeURIComponent(c.branch)}`, {
-        method: "PATCH",
-        body: { sha: commit.sha, force: false },
-      });
-      return commit.sha;
-    }
-
-    function siteUrl(c) {
-      const host = `https://${c.owner.toLowerCase()}.github.io/`;
-      return c.repo.toLowerCase() === `${c.owner.toLowerCase()}.github.io` ? host : `${host}${c.repo}/`;
-    }
-
-    async function waitUntilLive(c, sha) {
-      const deadline = Date.now() + 5 * 60 * 1000;
-      while (Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 5000));
-        let build;
-        try { build = await gh(c, "/pages/builds/latest"); } catch (_) { return "unknown"; }
-        if (build.commit === sha && build.status === "built") return "live";
-        if (build.commit === sha && build.status === "errored") return "error";
-      }
-      return "unknown";
     }
 
     async function save() {
@@ -628,64 +608,35 @@
       const errors = SiteRender.validate(content);
       if (errors.length) return setStatus(errors.join(" "), "err");
 
-      const c = connection();
-      if (!c.token) {
-        $("#connect").open = true;
-        $("#token").focus();
-        return setStatus("Paste your access token to publish.", "err");
-      }
-
       busy = true;
       updateButtons();
       try {
-        let sha;
-        for (let attempt = 0; ; attempt++) {
-          const files = {
-            [CONTENT_PATH]: JSON.stringify(content, null, 2) + "\n",
-            ...SiteRender.buildPages(content, base.files),
-          };
-          const changedFiles = Object.entries(files).filter(([path, text]) => text !== base.files[path]);
-          if (!changedFiles.length) {
-            dirty = false;
-            setStatus("Nothing to publish; the site already matches.", "ok");
-            return;
-          }
-
-          setStatus("Publishing…");
-          try {
-            sha = await commitFiles(c, changedFiles);
-            base = { sha, files: { ...base.files, ...files } };
-            break;
-          } catch (error) {
-            const conflict = error.status === 422 && /fast.forward/i.test(error.message);
-            if (!conflict || attempt > 0) throw error;
-            const ok = confirm("The site was changed on GitHub since you loaded it. Publish your edits on top of the latest version?");
-            if (!ok) throw new Error("Not published. Click “Load content” to get the latest version.");
-            base = await fetchBase(c);
-          }
+        await ensurePermission(folder);
+        // Re-read from disk so edits made elsewhere (outside the editable regions) are kept.
+        const disk = await readFiles();
+        if (disk[CONTENT_PATH] !== base.files[CONTENT_PATH] &&
+            !confirm("content/site.json was changed outside the editor since you opened it. Overwrite it with your version?")) {
+          return setStatus("Not saved.", "err");
         }
 
-        dirty = false;
-        rememberSettings();
-        const url = siteUrl(c);
-        const run = ++publishRun;
-        setStatus("Published. GitHub is rebuilding the site (usually under a minute)…", "ok");
-        busy = false;
-        updateButtons();
+        const files = {
+          [CONTENT_PATH]: JSON.stringify(content, null, 2) + "\n",
+          ...SiteRender.buildPages(content, disk),
+        };
+        const changedFiles = Object.entries(files).filter(([path, text]) => text !== disk[path]);
+        for (const [path, text] of changedFiles) await writeFile(path, text);
 
-        const result = await waitUntilLive(c, sha);
-        if (dirty || run !== publishRun) return;
-        if (result === "live") {
-          setStatus(["Live ✓ ", el("a", { href: url, target: "_blank", rel: "noopener" }, "View site"),
-            " (hard-refresh with ⌘⇧R if you still see the old version)"], "ok");
-        } else if (result === "error") {
-          setStatus("Saved to GitHub, but the Pages build failed. Check the repo's Actions tab.", "err");
+        base = { files: { ...disk, ...files } };
+        dirty = false;
+        if (changedFiles.length) {
+          setStatus(`Saved ${changedFiles.length} file${changedFiles.length > 1 ? "s" : ""}.`, "ok");
+          $("#publish-cmd").textContent = PUBLISH_CMD;
+          $("#publish").hidden = false;
         } else {
-          setStatus(["Published ✓ The site updates within a minute or two. ",
-            el("a", { href: url, target: "_blank", rel: "noopener" }, "View site")], "ok");
+          setStatus("Nothing to save; the files already match.", "ok");
         }
       } catch (error) {
-        setStatus(friendly(error), "err");
+        setStatus(error.message, "err");
       } finally {
         busy = false;
         updateButtons();
@@ -714,8 +665,14 @@
 
     /* ---------- wiring ---------- */
 
-    $("#load-btn").addEventListener("click", load);
+    $("#open-btn").addEventListener("click", () => openFolder(false));
+    $("#change-btn").addEventListener("click", () => openFolder(true));
     $("#save-btn").addEventListener("click", save);
+    $("#copy-btn").addEventListener("click", async () => {
+      await navigator.clipboard.writeText(PUBLISH_CMD);
+      $("#copy-btn").textContent = "Copied";
+      setTimeout(() => { $("#copy-btn").textContent = "Copy"; }, 1500);
+    });
 
     document.addEventListener("keydown", (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
@@ -728,12 +685,18 @@
       if (dirty) e.preventDefault();
     });
 
-    for (const key of ["repo", "branch", "token"]) {
-      const saved = localStorage.getItem(STORE + key);
-      if (saved) $("#" + key).value = saved;
+    if (!("showDirectoryPicker" in window)) {
+      $("#open-btn").disabled = true;
+      setStatus("Open this page in Google Chrome or Microsoft Edge; this browser can't edit local files.", "err");
+    } else {
+      setStatus("Open the website folder to start.");
+      kv("readonly", (store) => store.get("folder")).then((handle) => {
+        if (!handle || folder) return;
+        savedFolder = handle;
+        $("#open-btn").textContent = `Open “${handle.name}”`;
+        $("#change-btn").hidden = false;
+      }).catch(() => {});
     }
-    $("#remember").checked = Boolean(localStorage.getItem(STORE + "token"));
-    setStatus("Click “Load content” to start.");
   </script>
 </body>
 </html>
